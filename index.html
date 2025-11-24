@@ -3,948 +3,749 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>免疫应答流程图拼图游戏</title>
+    <title>免疫应答拼图小游戏</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --innate-bg: #fff5d7; /* 固有免疫背景淡黄 */
+            --adaptive-bg: #e0f4fa; /* 适应性免疫背景淡蓝 */
+            --arrow-color: #4a5568;
+            --correct-color: #48bb78;
+            --wrong-color: #f56565;
         }
 
         body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
+            font-family: 'Comic Sans MS', 'YouYuan', sans-serif; /* 卡通字体风格 */
+            background-color: #f0f2f5;
+            margin: 0;
             padding: 20px;
-            overflow-x: auto;
-        }
-
-        .container {
-            max-width: 1400px;
-            min-width: 1200px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            user-select: none;
         }
 
         h1 {
-            text-align: center;
-            color: #333;
+            color: #2d3748;
             margin-bottom: 10px;
-            font-size: 2.5em;
         }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.2em;
+        /* --- 游戏进度和得分 --- */
+        .progress-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+            margin-bottom: 15px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
-
-        .game-area {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 30px;
-            margin-bottom: 30px;
+        .progress-bar {
+            flex-grow: 1;
+            height: 20px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            margin: 0 15px;
+            overflow: hidden;
         }
-
-        /* 横向流程图样式 */
-        .flowchart-horizontal {
-            background: #f8f9fa;
-            border-radius: 15px;
-            padding: 40px 30px;
-            position: relative;
-            min-height: 500px;
-            border: 3px solid #dee2e6;
-            overflow: visible;
-        }
-
-        .timeline-container {
-            position: relative;
-            height: 400px;
-            margin: 20px 0;
-        }
-
-        .timeline-axis {
-            position: absolute;
-            bottom: 50px;
-            left: 50px;
-            right: 50px;
-            height: 4px;
-            background: #495057;
-            z-index: 1;
-        }
-
-        .timeline-label {
-            position: absolute;
-            bottom: 30px;
-            font-weight: bold;
-            color: #495057;
-            font-size: 1.1em;
-        }
-
-        .timeline-left {
-            left: 150px;
-        }
-
-        .timeline-right {
-            right: 150px;
-        }
-
-        .first-defense-line {
-            position: absolute;
-            left: 120px;
-            top: 50px;
-            bottom: 100px;
-            width: 4px;
-            background: #ff6b6b;
-            z-index: 1;
-        }
-
-        .first-defense-label {
-            position: absolute;
-            left: 130px;
-            top: 60px;
-            transform: rotate(-90deg);
-            transform-origin: left top;
-            white-space: nowrap;
-            font-weight: bold;
-            color: #ff6b6b;
-            font-size: 0.9em;
-        }
-
-        .immune-divider {
-            position: absolute;
-            left: 50%;
-            top: 50px;
-            bottom: 100px;
-            width: 2px;
-            background: #adb5bd;
-            z-index: 1;
-        }
-
-        /* 免疫区域容器 */
-        .immune-sections {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 40px;
+        .progress-fill {
             height: 100%;
-            position: relative;
-            z-index: 2;
+            background: linear-gradient(90deg, #48bb78, #38a169);
+            width: 0%;
+            transition: width 0.5s;
+        }
+        .score-display {
+            font-weight: bold;
+            color: #2d3748;
+            font-size: 18px;
         }
 
-        .immune-section {
+        /* --- 游戏主区域 --- */
+        .game-container {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            width: 100%;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        /* 左侧病原体输入 */
+        .step-start {
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            padding: 20px;
+            align-items: center;
+            margin-right: 10px;
         }
-
-        .immune-section.innate {
-            border-right: 2px dashed #adb5bd;
-        }
-
-        .section-header {
-            text-align: center;
+        .big-arrow {
+            font-size: 40px;
+            color: #4299e1;
             font-weight: bold;
-            font-size: 1.2em;
-            margin-bottom: 10px;
-            color: #495057;
+            margin: 0 10px;
         }
 
-        /* 免疫细胞网格布局 */
-        .immune-grid {
+        /* 核心免疫区容器 */
+        .immune-zone {
+            display: flex;
+            border: 2px dashed #cbd5e0;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 固有免疫区 (黄色) */
+        .innate-zone {
+            background-color: var(--innate-bg);
+            padding: 20px;
+            width: 350px;
+            display: flex;
+            flex-direction: column;
+            border-right: 3px dashed #a0aec0;
+            position: relative;
+        }
+        
+        /* 固有免疫区的自由放置区 */
+        .innate-drop-area {
+            flex-grow: 1;
             display: grid;
-            grid-template-columns: 1fr;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 10px;
+            min-height: 300px;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+            border-radius: 8px;
+        }
+        .innate-drop-area.highlight {
+            background-color: rgba(255, 255, 255, 0.5);
+            border-color: #ed8936;
+        }
+
+        /* 适应性免疫区 (蓝色) */
+        .adaptive-zone {
+            background-color: var(--adaptive-bg);
+            padding: 20px;
+            width: 450px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 30px; /* T细胞组和B细胞组的间距 */
+        }
+
+        /* 细胞分化结构 */
+        .differentiation-group {
+            display: flex;
+            align-items: center;
             gap: 10px;
         }
-
-        .immune-row {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            align-items: start;
+        .parent-cell-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .arrows-col {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            height: 100px;
+            width: 40px;
+            position: relative;
+        }
+        /* 绘制分叉箭头 */
+        .split-arrow svg {
+            width: 100%;
+            height: 100%;
+            stroke: var(--arrow-color);
+            stroke-width: 2;
+            fill: none;
+        }
+        .child-cells-col {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
-        /* 免疫细胞样式 */
-        .immune-cell {
-            background: white;
-            padding: 12px 8px;
-            border-radius: 8px;
-            border: 2px solid #adb5bd;
+        /* --- 通用细胞样式 --- */
+        .cell {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
             text-align: center;
-            min-height: 70px;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: grab;
+            position: relative;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+        .cell:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
+        .cell-graphic {
+            width: 50px;
+            height: 50px;
+            margin-bottom: 5px;
+            border-radius: 50%;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+            background-size: cover;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            cursor: pointer;
+            background: white; /* 默认白底 */
+            border: 2px solid #333;
         }
-
-        .immune-cell.innate {
-            border-left: 4px solid #ff6b6b;
-        }
-
-        .immune-cell.adaptive {
-            border-left: 4px solid #51cf66;
-        }
-
-        .immune-cell.blank {
-            background: #f8f9fa;
-            border: 2px dashed #adb5bd;
-            color: #666;
-            font-style: italic;
-        }
-
-        .immune-cell.blank.hover {
-            background: #e9ecef;
-            border-color: #4dabf7;
-        }
-
-        .immune-cell.correct {
-            background: #ebfbee;
-            border-color: #51cf66;
-        }
-
-        .immune-cell.incorrect {
-            background: #fff5f5;
-            border-color: #ff6b6b;
-        }
-
-        .cell-title {
-            font-weight: bold;
+        .cell span {
+            line-height: 1.1;
             color: #333;
-            font-size: 0.85em;
-            line-height: 1.2;
+            background: rgba(255,255,255,0.8);
+            padding: 2px 4px;
+            border-radius: 4px;
         }
 
-        /* 特殊节点样式 */
-        .pathogen, .clear-pathogen {
-            position: absolute;
-            background: white;
-            padding: 12px 15px;
-            border-radius: 8px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            z-index: 3;
-            min-width: 100px;
-        }
+        /* 各种细胞的特定样式 (CSS画图) */
+        /* 病原体 */
+        .pathogen-graphic { background: #fc8181; border-color: #c53030; position: relative; }
+        .pathogen-graphic::after { content:''; position:absolute; width:60%; height:60%; border-radius:50%; background:#feb2b2; }
+        /* 树突状 (星形) */
+        .dendritic-graphic { background: #ecc94b; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); border: none; }
+        /* 中性粒 */
+        .neutrophil-graphic { background: #fbb6ce; border-radius: 40% 60% 50% 50%; border-color: #d53f8c; }
+        /* 自然杀伤 */
+        .nk-graphic { background: #68d391; border-color: #2f855a; position: relative;}
+        .nk-graphic::before { content: '•••'; color: white; font-weight: bold;}
+        /* 巨噬细胞 */
+        .macrophage-graphic { background: #f6e05e; border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; border-color: #d69e2e; transform: scale(1.1); }
+        /* T细胞 (蓝紫系) */
+        .t-cell-graphic { background: #63b3ed; border-color: #3182ce; }
+        .memory-t-graphic { background: #90cdf4; border: 3px double #2b6cb0; }
+        .effector-t-graphic { background: #7f9cf5; border-color: #5a67d8; }
+        /* B细胞 (粉红系) */
+        .b-cell-graphic { background: #f687b3; border-color: #d53f8c; position: relative; }
+        .b-cell-graphic::before { content: 'Y'; position: absolute; top: -10px; color: #d53f8c; font-weight: bold;}
+        .plasma-graphic { background: #f6ad55; border-radius: 45%; border-color: #dd6b20; } /* 浆细胞像个煎蛋 */
+        .memory-b-graphic { background: #fbb6ce; border: 3px double #b83280; }
+        
+        /* 固有淋巴样细胞 */
+        .ilc-graphic { background: #4fd1c5; border-color: #285e61; position: relative; }
+        .ilc-graphic::before { content: 'ILC'; font-size: 8px; color: white; font-weight: bold; }
+        
+        /* 固有样淋巴细胞 */
+        .ill-graphic { background: #9f7aea; border-color: #553c9a; position: relative; }
+        .ill-graphic::before { content: 'ILL'; font-size: 8px; color: white; font-weight: bold; }
+        
+        /* 抗体 */
+        .antibody-graphic { background: transparent; border: none; box-shadow: none; font-size: 30px; color: #3182ce; font-weight: bold; }
 
-        .pathogen {
-            background: #ff8787;
-            color: white;
-            left: 50px;
-            bottom: 150px;
-            border: 2px solid #fa5252;
-        }
-
-        .clear-pathogen {
-            background: #38d9a9;
-            color: white;
-            right: 50px;
-            bottom: 150px;
-            border: 2px solid #20c997;
-        }
-
-        /* 连接线样式 */
-        .connection-line {
-            position: absolute;
-            background: #495057;
-            z-index: 1;
-        }
-
-        .arrow {
-            position: absolute;
-            width: 0;
-            height: 0;
-            border-style: solid;
-            z-index: 2;
-        }
-
-        .arrow-right {
-            border-width: 6px 0 6px 10px;
-            border-color: transparent transparent transparent #495057;
-        }
-
-        .arrow-down {
-            border-width: 10px 6px 0 6px;
-            border-color: #495057 transparent transparent transparent;
-        }
-
-        /* 拼图块区域 */
-        .puzzle-pieces {
-            background: #e9ecef;
-            border-radius: 15px;
-            padding: 20px;
-            border: 3px dashed #adb5bd;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
-        .section-title {
-            font-size: 1.3em;
-            color: #495057;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .puzzle-piece {
-            background: white;
-            padding: 15px;
-            margin: 10px 0;
+        /* --- 挖空槽位样式 --- */
+        .slot {
+            width: 70px;
+            height: 70px;
+            background-color: rgba(0,0,0,0.05);
+            border: 2px dashed #a0aec0;
             border-radius: 10px;
-            cursor: grab;
-            border: 2px solid #4dabf7;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            transition: all 0.3s;
         }
-
-        .puzzle-piece:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .puzzle-piece:active {
-            cursor: grabbing;
-        }
-
-        .puzzle-piece.used {
-            opacity: 0.5;
-            cursor: not-allowed;
-            border-color: #adb5bd;
-        }
-
-        .piece-title {
+        .slot::before {
+            content: '?';
+            font-size: 20px;
+            color: #cbd5e0;
             font-weight: bold;
-            color: #333;
+        }
+        .slot.hovered {
+            background-color: #e6fffa;
+            border-color: #38b2ac;
+            transform: scale(1.05);
+        }
+        .slot.filled {
+            border-style: solid;
+            background: transparent;
+        }
+        .slot.filled::before { content: none; }
+        
+        /* 正确/错误的反馈动画 */
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); }
+        }
+        .wrong-feedback {
+            animation: shake 0.4s;
+            border-color: var(--wrong-color) !important;
+        }
+        .correct-feedback {
+            border-color: var(--correct-color) !important;
+            box-shadow: 0 0 10px var(--correct-color);
+        }
+
+        /* --- 底部时间轴 --- */
+        .timeline-container {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+            position: relative;
+            padding-top: 10px;
+        }
+        .timeline-arrow {
+            width: 100%;
+            height: 30px;
+            background: linear-gradient(to right, #63b3ed, #4299e1);
+            clip-path: polygon(0% 20%, 98% 20%, 98% 0%, 100% 50%, 98% 100%, 98% 80%, 0% 80%);
             margin-bottom: 5px;
         }
-
-        .piece-type {
-            font-size: 0.8em;
-            color: #666;
-            padding: 2px 8px;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 5px;
-        }
-
-        .type-innate {
-            background: #ffcccc;
-            color: #c92a2a;
-        }
-
-        .type-adaptive {
-            background: #d3f9d8;
-            color: #2b8a3e;
-        }
-
-        /* 控制按钮样式 */
-        .controls {
-            text-align: center;
-            margin: 30px 0;
-        }
-
-        button {
-            background: linear-gradient(135deg, #51cf66, #40c057);
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 25px;
-            font-size: 1.1em;
-            cursor: pointer;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(81, 207, 102, 0.3);
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(81, 207, 102, 0.4);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        button.reset {
-            background: linear-gradient(135deg, #ff6b6b, #fa5252);
-            box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
-        }
-
-        .score {
-            text-align: center;
-            font-size: 1.2em;
-            color: #333;
-            margin-top: 20px;
+        .timeline-labels {
+            display: flex;
+            justify-content: space-between;
+            width: 85%; /* 对齐上方两个区域的大致比例 */
             font-weight: bold;
+            color: #4a5568;
+            padding-left: 50px; /* 偏移一点 */
         }
 
-        .completion-message {
-            text-align: center;
-            background: linear-gradient(135deg, #51cf66, #40c057);
-            color: white;
+        /* --- 拼图选项区 --- */
+        .options-dock {
+            margin-top: 30px;
+            background: white;
             padding: 20px;
             border-radius: 15px;
-            margin: 20px 0;
-            display: none;
-            animation: slideIn 0.5s ease;
+            width: 100%;
+            max-width: 1000px;
+            min-height: 120px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.05);
+            border: 2px solid #e2e8f0;
+        }
+        .options-dock h3 {
+            width: 100%;
+            text-align: center;
+            margin-top: 0;
+            color: #718096;
+            font-size: 16px;
         }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        /* 胜利弹窗 */
+        .win-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            z-index: 100;
+            text-align: center;
+            border: 5px solid #f6ad55;
+        }
+        .win-modal h2 { color: #ed8936; font-size: 30px;}
+        .win-modal button {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+
+        /* 撒花特效 */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            opacity: 0.7;
+            z-index: 9999;
+            pointer-events: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🧩 免疫应答流程图拼图游戏</h1>
-        <div class="subtitle">将右侧的免疫细胞拖拽到流程图中正确的位置，完成免疫应答过程</div>
-        
-        <div class="game-area">
-            <div class="flowchart-horizontal">
-                <div class="section-title">🔄 免疫应答流程图</div>
-                <div class="timeline-container" id="flowchart-container">
-                    <!-- 时间轴 -->
-                    <div class="timeline-axis"></div>
-                    <div class="timeline-label timeline-left">固有免疫（数分钟至数日）</div>
-                    <div class="timeline-label timeline-right">适应性免疫（数日后）</div>
-                    
-                    <!-- 第一道防线竖线 -->
-                    <div class="first-defense-line"></div>
-                    <div class="first-defense-label">免疫屏障/补体系统</div>
-                    
-                    <!-- 免疫类型分隔线 -->
-                    <div class="immune-divider"></div>
-                    
-                    <!-- 特殊节点 -->
-                    <div class="pathogen">病原体</div>
-                    <div class="clear-pathogen">清除病原体</div>
-                    
-                    <!-- 免疫区域 -->
-                    <div class="immune-sections">
-                        <!-- 固有免疫区域 -->
-                        <div class="immune-section innate">
-                            <div class="immune-grid">
-                                <!-- 第一行 -->
-                                <div class="immune-row">
-                                    <div class="immune-cell innate" data-id="barrier">
-                                        <div class="cell-title">免疫屏障</div>
-                                    </div>
-                                    <div class="immune-cell innate" data-id="dendritic">
-                                        <div class="cell-title">树突状细胞</div>
-                                    </div>
-                                    <div class="immune-cell innate" data-id="neutrophil">
-                                        <div class="cell-title">中性粒细胞</div>
-                                    </div>
-                                </div>
-                                <!-- 第二行 -->
-                                <div class="immune-row">
-                                    <div class="immune-cell innate" data-id="complement">
-                                        <div class="cell-title">补体系统</div>
-                                    </div>
-                                    <div class="immune-cell innate" data-id="nk">
-                                        <div class="cell-title">自然杀伤细胞</div>
-                                    </div>
-                                    <div class="immune-cell innate" data-id="macrophage">
-                                        <div class="cell-title">单核/巨噬细胞</div>
-                                    </div>
-                                </div>
-                                <!-- 第三行 -->
-                                <div class="immune-row">
-                                    <div class="immune-cell innate" style="visibility: hidden;"></div>
-                                    <div class="immune-cell innate" data-id="ilc">
-                                        <div class="cell-title">固有淋巴样细胞</div>
-                                    </div>
-                                    <div class="immune-cell innate" data-id="innate-lymphocyte">
-                                        <div class="cell-title">固有样淋巴细胞</div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 适应性免疫区域 -->
-                        <div class="immune-section adaptive">
-                            <div class="immune-grid">
-                                <!-- 第一行 -->
-                                <div class="immune-row">
-                                    <div class="immune-cell adaptive" data-id="t-cell">
-                                        <div class="cell-title">T细胞</div>
-                                    </div>
-                                    <div class="immune-cell adaptive" data-id="effector-t">
-                                        <div class="cell-title">效应T细胞</div>
-                                    </div>
-                                    <div class="immune-cell adaptive" data-id="memory-t">
-                                        <div class="cell-title">记忆T细胞</div>
-                                    </div>
-                                </div>
-                                <!-- 第二行 -->
-                                <div class="immune-row">
-                                    <div class="immune-cell adaptive" data-id="b-cell">
-                                        <div class="cell-title">B细胞</div>
-                                    </div>
-                                    <div class="immune-cell adaptive" data-id="plasma">
-                                        <div class="cell-title">浆细胞</div>
-                                    </div>
-                                    <div class="immune-cell adaptive" data-id="memory-b">
-                                        <div class="cell-title">记忆B细胞</div>
-                                    </div>
-                                </div>
-                                <!-- 第三行 -->
-                                <div class="immune-row">
-                                    <div class="immune-cell adaptive" style="visibility: hidden;"></div>
-                                    <div class="immune-cell adaptive" data-id="antibody">
-                                        <div class="cell-title">抗体</div>
-                                    </div>
-                                    <div class="immune-cell adaptive" style="visibility: hidden;"></div>
-                                </div>
-                            </div>
-                        </div>
+
+    <h1>⚔️ 免疫应答大作战 🛡️</h1>
+    <p style="color: #718096; font-size: 14px;">请将底部的免疫细胞拖动到正确的位置！</p>
+    
+    <!-- 游戏进度和得分 -->
+    <div class="progress-container">
+        <div>拼图进度:</div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="score-display">得分: <span id="score">0</span>/100</div>
+    </div>
+
+    <div class="game-container">
+        <!-- 1. 病原体区 -->
+        <div class="step-start">
+            <div class="cell">
+                <div class="cell-graphic pathogen-graphic"></div>
+                <span>病原体</span>
+            </div>
+            <div class="cell" style="margin-top: 10px">
+                <div class="cell-graphic pathogen-graphic"></div>
+            </div>
+        </div>
+        <div class="big-arrow">➡</div>
+
+        <!-- 2. 核心免疫区 -->
+        <div class="immune-zone">
+            
+            <!-- 固有免疫 -->
+            <div class="innate-zone">
+                <h4 style="text-align: center; color: #d69e2e; margin: 0 0 10px 0;">固有免疫屏障</h4>
+                <!-- 模拟上皮细胞屏障 -->
+                <div style="position: absolute; left: 10px; top: 60px; bottom: 60px; width: 20px; display: flex; flex-direction: column; gap: 2px;">
+                   <div style="flex:1; background:#ed8936; border-radius: 4px; opacity: 0.6;"></div>
+                   <div style="flex:1; background:#ed8936; border-radius: 4px; opacity: 0.6;"></div>
+                   <div style="flex:1; background:#ed8936; border-radius: 4px; opacity: 0.6;"></div>
+                   <div style="flex:1; background:#ed8936; border-radius: 4px; opacity: 0.6;"></div>
+                   <div style="flex:1; background:#ed8936; border-radius: 4px; opacity: 0.6;"></div>
+                </div>
+
+                <!-- 固有免疫细胞放置区 (模糊判断区) -->
+                <div class="innate-drop-area" id="innate-area" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <!-- 这里不放具体插槽，只要拖进来是固有免疫细胞就算对 -->
+                    <div style="grid-column: span 2; text-align: center; color: #a0aec0; font-size: 12px; padding-top: 100px; pointer-events: none;">
+                        将 固有免疫细胞<br>拖入此区域
                     </div>
                 </div>
             </div>
-            
-            <div class="puzzle-pieces">
-                <div class="section-title">🧩 拖拽拼图块</div>
-                <div id="pieces-container">
-                    <!-- 拼图块将通过JavaScript动态添加 -->
+
+            <!-- 适应性免疫 -->
+            <div class="adaptive-zone">
+                
+                <!-- T细胞通路 -->
+                <div class="differentiation-group">
+                    <div class="parent-cell-col">
+                        <!-- 挖空：T细胞 -->
+                        <div class="slot" id="slot-t-cell" data-answer="t-cell" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        <span style="font-size:12px; color:#4a5568;">T细胞</span>
+                    </div>
+                    <div class="arrows-col">
+                        <div class="split-arrow">
+                            <svg viewBox="0 0 40 100" preserveAspectRatio="none">
+                                <path d="M0,50 C20,50 20,20 40,20" stroke-dasharray="40 0" fill="none" marker-end="url(#arrowhead)"/>
+                                <path d="M0,50 C20,50 20,80 40,80" stroke-dasharray="40 0" fill="none" marker-end="url(#arrowhead)"/>
+                                <defs>
+                                    <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                      <polygon points="0 0, 10 3.5, 0 7" fill="#4a5568" />
+                                    </marker>
+                                </defs>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="child-cells-col">
+                        <!-- 挖空：记忆T细胞 -->
+                        <div class="slot" id="slot-mem-t" data-answer="memory-t" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        <!-- 挖空：效应T细胞 -->
+                        <div class="slot" id="slot-eff-t" data-answer="effector-t" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                    </div>
                 </div>
+
+                <!-- B细胞通路 -->
+                <div class="differentiation-group">
+                    <div class="parent-cell-col">
+                        <!-- 挖空：B细胞 -->
+                        <div class="slot" id="slot-b-cell" data-answer="b-cell" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                        <span style="font-size:12px; color:#4a5568;">B细胞</span>
+                    </div>
+                    <div class="arrows-col">
+                        <div class="split-arrow">
+                            <svg viewBox="0 0 40 100" preserveAspectRatio="none">
+                                <path d="M0,50 C20,50 20,20 40,20" stroke-dasharray="40 0" fill="none" marker-end="url(#arrowhead)"/>
+                                <path d="M0,50 C20,50 20,80 40,80" stroke-dasharray="40 0" fill="none" marker-end="url(#arrowhead)"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="child-cells-col">
+                        <!-- 挖空：浆细胞 -->
+                        <div style="display:flex; align-items:center;">
+                            <div class="slot" id="slot-plasma" data-answer="plasma" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                            <span style="font-size:20px; color:#3182ce; margin-left:5px;">→ Y</span> <!-- 简单的抗体示意 -->
+                        </div>
+                        <!-- 挖空：记忆B细胞 -->
+                        <div class="slot" id="slot-mem-b" data-answer="memory-b" ondrop="drop(event)" ondragover="allowDrop(event)"></div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
-        <div class="completion-message" id="completionMessage">
-            <h2>🎉 恭喜！你完成了免疫应答流程图！</h2>
-            <p>你成功理解了固有免疫和适应性免疫的完整过程！</p>
+        <div class="big-arrow">➡</div>
+        <!-- 3. 清除病原体 -->
+        <div class="step-end" style="text-align:center">
+            <div style="position:relative; width: 80px; height: 80px;">
+                <div class="cell-graphic pathogen-graphic" style="position:absolute; top:0; left:0; opacity: 0.5;"></div>
+                <div class="cell-graphic pathogen-graphic" style="position:absolute; top:20px; left:25px; opacity: 0.5;"></div>
+                <div style="position:absolute; top:0; left:0; width:100%; height:100%; font-size: 60px; color: #e53e3e; line-height: 80px;">❌</div>
+            </div>
+            <span style="font-size:14px; font-weight:bold; color:#2d3748">清除病原体</span>
         </div>
 
-        <div class="controls">
-            <button onclick="checkAnswers()">✅ 检查答案</button>
-            <button onclick="resetGame()" class="reset">🔄 重新开始</button>
-            <button onclick="showHint()">💡 显示提示</button>
+    </div>
+
+    <!-- 时间轴 -->
+    <div class="timeline-container">
+        <div class="timeline-arrow"></div>
+        <div class="timeline-labels">
+            <span style="color: #d69e2e;">固有免疫 (数分钟至数日)</span>
+            <span style="color: #3182ce;">适应性免疫 (数日后)</span>
+        </div>
+    </div>
+
+    <!-- 拼图选项坞 -->
+    <div class="options-dock" id="options-dock" ondrop="dropBack(event)" ondragover="allowDrop(event)">
+        <h3>🧩 细胞仓库 (拖拽下方细胞填空)</h3>
+        
+        <!-- 固有免疫组 (ID前缀 innate-) -->
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="innate-dendritic">
+            <div class="cell-graphic dendritic-graphic"></div>
+            <span>树突状细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="innate-neutrophil">
+            <div class="cell-graphic neutrophil-graphic"></div>
+            <span>中性粒细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="innate-nk">
+            <div class="cell-graphic nk-graphic"></div>
+            <span>自然杀伤细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="innate-macrophage">
+            <div class="cell-graphic macrophage-graphic"></div>
+            <span>巨噬细胞</span>
+        </div>
+        <!-- 固有淋巴样细胞 -->
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="innate-ilc">
+            <div class="cell-graphic ilc-graphic"></div>
+            <span>固有淋巴样细胞</span>
+        </div>
+        <!-- 固有样淋巴细胞 -->
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="innate-ill">
+            <div class="cell-graphic ill-graphic"></div>
+            <span>固有样淋巴细胞</span>
         </div>
 
-        <div class="score" id="score">得分: 0</div>
+        <!-- 适应性免疫组 (ID对应data-answer) -->
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="t-cell">
+            <div class="cell-graphic t-cell-graphic"></div>
+            <span>T细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="b-cell">
+            <div class="cell-graphic b-cell-graphic"></div>
+            <span>B细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="effector-t">
+            <div class="cell-graphic effector-t-graphic"></div>
+            <span>效应T细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="memory-t">
+            <div class="cell-graphic memory-t-graphic"></div>
+            <span>记忆T细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="plasma">
+            <div class="cell-graphic plasma-graphic"></div>
+            <span>浆细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="memory-b">
+            <div class="cell-graphic memory-b-graphic"></div>
+            <span>记忆B细胞</span>
+        </div>
+
+        <!-- 干扰项 -->
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="distractor-rbc">
+            <div class="cell-graphic" style="background:#fc8181; border-radius:50%; border: 4px solid #e53e3e;"></div>
+            <span>红细胞</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="distractor-platelet">
+            <div class="cell-graphic" style="background:#9ae6b4; border-radius:10px; border: 3px solid #38a169;"></div>
+            <span>血小板</span>
+        </div>
+        <div class="cell" draggable="true" ondragstart="drag(event)" id="distractor-fibroblast">
+            <div class="cell-graphic" style="background:#d6bcfa; border-radius:40% 60% 60% 40%; border: 3px solid #805ad5;"></div>
+            <span>成纤维细胞</span>
+        </div>
+    </div>
+
+    <!-- 胜利弹窗 -->
+    <div class="win-modal" id="win-modal">
+        <h2>🎉 完美! 免疫系统防御成功!</h2>
+        <p>你成功重建了免疫应答过程。</p>
+        <p>最终得分: <span id="final-score">0</span>/100</p>
+        <button onclick="location.reload()">再玩一次</button>
     </div>
 
     <script>
-        // 免疫细胞数据 - 根据你提供的图片
-        const immuneCells = [
-            // 固有免疫细胞
-            { id: 'barrier', name: '免疫屏障', type: 'innate', description: '皮肤、黏膜等物理屏障' },
-            { id: 'complement', name: '补体系统', type: 'innate', description: '血浆中的蛋白质，协助清除病原体' },
-            { id: 'dendritic', name: '树突状细胞', type: 'innate', description: '抗原呈递细胞，连接固有和适应性免疫' },
-            { id: 'nk', name: '自然杀伤细胞', type: 'innate', description: '非特异性杀伤病毒感染细胞和肿瘤细胞' },
-            { id: 'ilc', name: '固有淋巴样细胞', type: 'innate', description: '参与早期免疫应答和炎症反应' },
-            { id: 'neutrophil', name: '中性粒细胞', type: 'innate', description: '最先到达感染部位的吞噬细胞' },
-            { id: 'macrophage', name: '单核/巨噬细胞', type: 'innate', description: '强大的吞噬细胞，清除病原体和细胞碎片' },
-            { id: 'innate-lymphocyte', name: '固有样淋巴细胞', type: 'innate', description: '具有某些适应性免疫特征的固有免疫细胞' },
+        let correctCount = 0;
+        const totalRequired = 12; // 6个固有 + 6个适应性
+        let score = 0;
+        
+        // 更新进度和得分显示
+        function updateProgress() {
+            const progressFill = document.getElementById('progress-fill');
+            const progressPercent = (correctCount / totalRequired) * 100;
+            progressFill.style.width = `${progressPercent}%`;
             
-            // 适应性免疫细胞
-            { id: 't-cell', name: 'T细胞', type: 'adaptive', description: '细胞免疫的主要执行者' },
-            { id: 'b-cell', name: 'B细胞', type: 'adaptive', description: '体液免疫的主要执行者' },
-            { id: 'effector-t', name: '效应T细胞', type: 'adaptive', description: '执行细胞免疫功能的T细胞亚群' },
-            { id: 'plasma', name: '浆细胞', type: 'adaptive', description: '由B细胞分化而来，大量产生抗体' },
-            { id: 'memory-t', name: '记忆T细胞', type: 'adaptive', description: '提供长期免疫记忆的T细胞' },
-            { id: 'memory-b', name: '记忆B细胞', type: 'adaptive', description: '提供长期免疫记忆的B细胞' },
-            { id: 'antibody', name: '抗体', type: 'adaptive', description: '由浆细胞产生的免疫球蛋白' }
-        ];
-
-        // 游戏状态
-        let gameState = {
-            score: 0,
-            blankCells: [],
-            placedPieces: {},
-            usedPieces: new Set()
-        };
-
-        // 初始化游戏
-        function initGame() {
-            createPuzzlePieces();
-            createBlankCells();
-            // 延迟创建连接线，确保DOM已渲染
-            setTimeout(createConnections, 100);
+            // 计算得分：每正确放置一个细胞得8分，满分96，再加4分奖励
+            score = Math.min(correctCount * 8 + (correctCount === totalRequired ? 4 : 0), 100);
+            document.getElementById('score').textContent = score;
         }
 
-        // 创建连接线和箭头 - 使用网格布局计算
-        function createConnections() {
-            const container = document.getElementById('flowchart-container');
-            
-            // 清除现有的连接线
-            const existingConnections = container.querySelectorAll('.connection-line, .arrow');
-            existingConnections.forEach(el => el.remove());
-            
-            // 获取关键元素的位置
-            const pathogen = container.querySelector('.pathogen');
-            const barrier = container.querySelector('[data-id="barrier"]');
-            const complement = container.querySelector('[data-id="complement"]');
-            const dendritic = container.querySelector('[data-id="dendritic"]');
-            const tCell = container.querySelector('[data-id="t-cell"]');
-            const clearPathogen = container.querySelector('.clear-pathogen');
-            
-            if (!pathogen || !barrier || !complement || !dendritic || !tCell || !clearPathogen) return;
-            
-            // 计算元素中心点
-            const getCenter = (element) => {
-                const rect = element.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                return {
-                    x: rect.left + rect.width/2 - containerRect.left,
-                    y: rect.top + rect.height/2 - containerRect.top
-                };
-            };
-            
-            const pathogenCenter = getCenter(pathogen);
-            const barrierCenter = getCenter(barrier);
-            const complementCenter = getCenter(complement);
-            const dendriticCenter = getCenter(dendritic);
-            const tCellCenter = getCenter(tCell);
-            const clearCenter = getCenter(clearPathogen);
-            
-            // 创建连接线
-            // 病原体到免疫屏障和补体系统
-            createLine(pathogenCenter.x, pathogenCenter.y, barrierCenter.x, barrierCenter.y);
-            createLine(pathogenCenter.x, pathogenCenter.y, complementCenter.x, complementCenter.y);
-            
-            // 免疫屏障和补体系统到树突状细胞
-            createLine(barrierCenter.x, barrierCenter.y, dendriticCenter.x, dendriticCenter.y);
-            createLine(complementCenter.x, complementCenter.y, dendriticCenter.x, dendriticCenter.y);
-            
-            // 树突状细胞到T细胞
-            createLine(dendriticCenter.x, dendriticCenter.y, tCellCenter.x, tCellCenter.y);
-            
-            // 从所有细胞到清除病原体（简化处理）
-            const allCells = container.querySelectorAll('.immune-cell[data-id]');
-            allCells.forEach(cell => {
-                const cellCenter = getCenter(cell);
-                createLine(cellCenter.x, cellCenter.y, clearCenter.x, clearCenter.y);
-            });
-        }
-
-        // 创建单个连接线
-        function createLine(fromX, fromY, toX, toY) {
-            const container = document.getElementById('flowchart-container');
-            
-            // 创建水平连接线
-            const line = document.createElement('div');
-            line.className = 'connection-line';
-            line.style.left = fromX + 'px';
-            line.style.top = fromY + 'px';
-            line.style.width = Math.sqrt(Math.pow(toX - fromX, 2) + Math.pow(toY - fromY, 2)) + 'px';
-            line.style.transform = `rotate(${Math.atan2(toY - fromY, toX - fromX)}rad)`;
-            line.style.transformOrigin = '0 0';
-            line.style.height = '2px';
-            container.appendChild(line);
-            
-            // 添加箭头
-            const arrow = document.createElement('div');
-            arrow.className = 'arrow arrow-right';
-            arrow.style.left = (toX - 8) + 'px';
-            arrow.style.top = (toY - 6) + 'px';
-            arrow.style.transform = `rotate(${Math.atan2(toY - fromY, toX - fromX)}rad)`;
-            container.appendChild(arrow);
-        }
-
-        // 创建拼图块
-        function createPuzzlePieces() {
-            const container = document.getElementById('pieces-container');
-            container.innerHTML = '';
-
-            // 随机打乱顺序
-            const shuffledCells = [...immuneCells].sort(() => Math.random() - 0.5);
-            
-            shuffledCells.forEach(cell => {
-                const piece = document.createElement('div');
-                piece.className = 'puzzle-piece';
-                piece.draggable = true;
-                piece.dataset.id = cell.id;
-                piece.dataset.cellType = cell.type; // 记录细胞类型
-                
-                piece.innerHTML = `
-                    <div class="piece-title">${cell.name}</div>
-                    <div class="piece-description">${cell.description}</div>
-                    <div class="piece-type ${cell.type === 'innate' ? 'type-innate' : 'type-adaptive'}">
-                        ${cell.type === 'innate' ? '固有免疫' : '适应性免疫'}
-                    </div>
-                `;
-                
-                // 添加拖拽事件
-                piece.addEventListener('dragstart', handleDragStart);
-                piece.addEventListener('dragend', handleDragEnd);
-                
-                container.appendChild(piece);
-            });
-        }
-
-        // 创建空白单元格（挖空的位置）
-        function createBlankCells() {
-            // 选择一些单元格作为空白 - 固定选择几个位置
-            const blankPositions = ['dendritic', 'nk', 'macrophage', 't-cell', 'b-cell', 'plasma'];
-            
-            gameState.blankCells = [];
-            
-            blankPositions.forEach(position => {
-                const cell = document.querySelector(`[data-id="${position}"]`);
-                if (cell) {
-                    const cellId = cell.dataset.id;
-                    const cellName = cell.querySelector('.cell-title')?.textContent || '';
-                    const cellType = cell.classList.contains('innate') ? 'innate' : 'adaptive';
-                    
-                    // 保存原始内容
-                    gameState.blankCells.push({
-                        element: cell,
-                        id: cellId,
-                        name: cellName,
-                        requiredType: cellType
-                    });
-                    
-                    // 设置为空白状态
-                    cell.innerHTML = '<div class="cell-title">???</div>';
-                    cell.classList.add('blank');
-                    
-                    // 添加拖放事件
-                    cell.addEventListener('dragover', handleDragOver);
-                    cell.addEventListener('dragenter', handleDragEnter);
-                    cell.addEventListener('dragleave', handleDragLeave);
-                    cell.addEventListener('drop', handleDrop);
-                }
-            });
-        }
-
-        // 拖拽事件处理
-        let draggedPiece = null;
-
-        function handleDragStart(e) {
-            if (this.classList.contains('used')) return;
-            
-            draggedPiece = this;
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/plain', this.dataset.id);
-            
-            // 确保拼图块在拖拽时可见
-            this.style.zIndex = '1000';
-        }
-
-        function handleDragEnd() {
-            this.classList.remove('dragging');
-            this.style.zIndex = '';
-            draggedPiece = null;
-        }
-
-        function handleDragOver(e) {
-            e.preventDefault();
-            return false;
-        }
-
-        function handleDragEnter(e) {
-            this.classList.add('hover');
-        }
-
-        function handleDragLeave() {
-            this.classList.remove('hover');
-        }
-
-        function handleDrop(e) {
-            e.preventDefault();
-            this.classList.remove('hover');
-            
-            if (draggedPiece && !gameState.usedPieces.has(draggedPiece.dataset.id)) {
-                const pieceId = draggedPiece.dataset.id;
-                const pieceType = draggedPiece.dataset.cellType;
-                const pieceName = draggedPiece.querySelector('.piece-title').textContent;
-                const targetCell = this;
-                const targetCellId = targetCell.dataset.id;
-                const targetCellType = targetCell.classList.contains('innate') ? 'innate' : 'adaptive';
-                
-                // 检查类型是否匹配
-                const isTypeMatch = pieceType === targetCellType;
-                
-                // 放置拼图块
-                targetCell.innerHTML = `<div class="cell-title">${pieceName}</div>`;
-                targetCell.classList.remove('blank');
-                
-                // 记录放置信息
-                gameState.placedPieces[targetCellId] = {
-                    pieceId: pieceId,
-                    isCorrect: isTypeMatch
-                };
-                gameState.usedPieces.add(pieceId);
-                
-                // 标记拼图块为已使用
-                draggedPiece.classList.add('used');
-                draggedPiece.draggable = false;
-                
-                updateScore();
+        function allowDrop(ev) {
+            ev.preventDefault();
+            // 如果是空槽位，添加高亮效果
+            if(ev.target.classList.contains('slot') || ev.target.id === 'innate-area') {
+                ev.target.classList.add('highlight');
             }
-            
-            return false;
         }
 
-        // 更新得分
-        function updateScore() {
-            const placedCount = Object.keys(gameState.placedPieces).length;
-            gameState.score = placedCount * 10;
-            document.getElementById('score').textContent = `得分: ${gameState.score}`;
+        // 移除高亮
+        document.addEventListener('dragleave', (ev) => {
+             if(ev.target.classList.contains('slot') || ev.target.id === 'innate-area') {
+                ev.target.classList.remove('highlight');
+            }
+        });
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+            ev.dataTransfer.effectAllowed = "move";
         }
 
-        // 检查答案 - 修改为检查类型匹配
-        function checkAnswers() {
-            let correctCount = 0;
-            const totalBlanks = gameState.blankCells.length;
+        function dropBack(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text");
+            var draggedElement = document.getElementById(data);
+            // 允许拖回仓库
+            document.getElementById("options-dock").appendChild(draggedElement);
             
-            gameState.blankCells.forEach(blankCell => {
-                const placedPiece = gameState.placedPieces[blankCell.id];
-                const cellElement = blankCell.element;
+            // 重置状态（如果有的话）
+            draggedElement.style.pointerEvents = "auto";
+            
+            // 如果从正确位置拖回，减少计数
+            if (draggedElement.dataset.placed === "true") {
+                correctCount--;
+                updateProgress();
+                draggedElement.dataset.placed = "false";
+            }
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            ev.target.classList.remove('highlight');
+            
+            var data = ev.dataTransfer.getData("text");
+            var draggedElement = document.getElementById(data);
+            var target = ev.target;
+
+            // 逻辑 1: 固有免疫区 (Innate Zone)
+            // 只要 ID 包含 'innate' 且目标是 innate-area
+            if (target.id === "innate-area" || target.closest('#innate-area')) {
+                let dropArea = document.getElementById("innate-area");
                 
-                if (placedPiece && placedPiece.isCorrect) {
-                    // 答案正确（类型匹配）
-                    cellElement.classList.add('correct');
-                    cellElement.classList.remove('incorrect');
+                if (data.includes("innate")) {
+                    // 正确：放入固有免疫区
+                    dropArea.appendChild(draggedElement);
+                    // 移除原来的文字提示
+                    let hint = dropArea.querySelector("div[style*='pointer-events: none']");
+                    if(hint) hint.style.display = "none";
+                    
+                    draggedElement.draggable = false; // 锁定
+                    draggedElement.style.cursor = "default";
+                    draggedElement.dataset.placed = "true";
                     correctCount++;
-                } else if (placedPiece) {
-                    // 答案错误（类型不匹配）
-                    cellElement.classList.add('incorrect');
-                    cellElement.classList.remove('correct');
+                    updateProgress();
+                    checkWin();
+                } else {
+                    // 错误反馈
+                    dropArea.classList.add("wrong-feedback");
+                    setTimeout(() => dropArea.classList.remove("wrong-feedback"), 400);
                 }
-            });
-            
-            if (correctCount === totalBlanks) {
-                showCompletionMessage();
+                return;
             }
-            
-            // 显示检查结果
-            alert(`正确答案: ${correctCount}/${totalBlanks}\n${correctCount === totalBlanks ? '🎉 完美！所有拼图都正确！' : '💡 继续努力！'}`);
-        }
 
-        // 显示完成消息
-        function showCompletionMessage() {
-            const message = document.getElementById('completionMessage');
-            message.style.display = 'block';
-            
-            // 添加庆祝效果
-            confetti({
-                particleCount: 100,
-                spread: 70,
-                origin: { y: 0.6 }
-            });
-        }
-
-        // 重置游戏
-        function resetGame() {
-            gameState = {
-                score: 0,
-                blankCells: [],
-                placedPieces: {},
-                usedPieces: new Set()
-            };
-            
-            document.getElementById('score').textContent = '得分: 0';
-            document.getElementById('completionMessage').style.display = 'none';
-            
-            // 重新初始化所有细胞
-            const allCells = document.querySelectorAll('.immune-cell[data-id]');
-            allCells.forEach(cell => {
-                const cellId = cell.dataset.id;
-                const originalCell = immuneCells.find(c => c.id === cellId);
-                if (originalCell) {
-                    cell.innerHTML = `<div class="cell-title">${originalCell.name}</div>`;
-                    cell.classList.remove('blank', 'correct', 'incorrect');
+            // 逻辑 2: 适应性免疫区 (精确匹配)
+            if (target.classList.contains("slot")) {
+                let requiredId = target.getAttribute("data-answer");
+                
+                if (data === requiredId) {
+                    // 正确
+                    target.appendChild(draggedElement);
+                    target.classList.add("filled");
+                    target.classList.add("correct-feedback");
+                    draggedElement.draggable = false;
+                    draggedElement.style.cursor = "default";
+                    draggedElement.dataset.placed = "true";
+                    correctCount++;
+                    updateProgress();
+                    checkWin();
+                } else {
+                    // 错误
+                    target.classList.add("wrong-feedback");
+                    setTimeout(() => target.classList.remove("wrong-feedback"), 400);
                 }
-            });
-            
-            // 重新创建拼图块和空白
-            createPuzzlePieces();
-            createBlankCells();
-            
-            // 重新创建连接线
-            setTimeout(createConnections, 100);
-        }
-
-        // 显示提示
-        function showHint() {
-            const hint = `
-💡 免疫应答流程提示：
-
-固有免疫（快速反应，数分钟至数日）：
-• 免疫屏障/补体系统 - 第一道防线
-• 树突状细胞 - 抗原呈递，连接两种免疫
-• 各种免疫细胞 - 非特异性清除病原体
-
-适应性免疫（特异性反应，数日后）：
-• T细胞和B细胞 - 特异性识别抗原
-• 效应细胞和抗体 - 执行特异性免疫功能
-• 记忆细胞 - 提供长期免疫保护
-
-规则说明：
-- 固有免疫区域的空白可以放置任何固有免疫细胞
-- 适应性免疫区域的空白必须放置对应的适应性免疫细胞
-- 细胞位置固定，排列整齐
-            `;
-            alert(hint);
-        }
-
-        // 简单的庆祝效果
-        function confetti(options) {
-            const particles = [];
-            const particleCount = options.particleCount || 50;
-            
-            for (let i = 0; i < particleCount; i++) {
-                createParticle();
             }
+        }
+
+        function checkWin() {
+            // 简单检查：适应性免疫所有插槽是否有子元素
+            const slots = document.querySelectorAll('.slot');
+            let adaptiveComplete = true;
+            slots.forEach(slot => {
+                if (slot.children.length === 0) adaptiveComplete = false;
+            });
+
+            // 检查固有免疫区是否有6个细胞
+            const innateArea = document.getElementById('innate-area');
+            const innateCount = innateArea.querySelectorAll('.cell').length;
+
+            if (adaptiveComplete && innateCount >= 6) {
+                setTimeout(() => {
+                    document.getElementById('final-score').textContent = score;
+                    document.getElementById('win-modal').style.display = 'block';
+                    confettiEffect(); // 撒花效果
+                }, 500);
+            }
+        }
+        
+        // 简单的撒花效果
+        function confettiEffect() {
+            const colors = ['#f56565', '#ed8936', '#ecc94b', '#48bb78', '#38b2ac', '#4299e1', '#9f7aea', '#ed64a6'];
             
-            function createParticle() {
-                const particle = document.createElement('div');
-                particle.innerHTML = ['🎉', '🎊', '⭐', '✨', '🥳'][Math.floor(Math.random() * 5)];
-                particle.style.cssText = `
-                    position: fixed;
-                    z-index: 10000;
-                    font-size: 20px;
-                    user-select: none;
-                    pointer-events: none;
-                    left: ${Math.random() * 100}%;
-                    top: ${Math.random() * 100}%;
-                `;
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.top = '-10px';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
+                document.body.appendChild(confetti);
                 
-                document.body.appendChild(particle);
-                
-                const animation = particle.animate([
-                    { 
-                        transform: 'translateY(0) rotate(0deg)',
-                        opacity: 1
-                    },
-                    { 
-                        transform: `translateY(${window.innerHeight}px) rotate(${Math.random() * 360}deg)`,
-                        opacity: 0
-                    }
+                // 动画
+                const animation = confetti.animate([
+                    { transform: `translateY(0) rotate(0deg)`, opacity: 1 },
+                    { transform: `translateY(${window.innerHeight + 100}px) rotate(${Math.random() * 360}deg)`, opacity: 0 }
                 ], {
-                    duration: 2000 + Math.random() * 1000,
-                    easing: 'cubic-bezier(0.2, 0, 0.8, 1)'
+                    duration: 2000 + Math.random() * 3000,
+                    easing: 'cubic-bezier(0.1, 0.8, 0.2, 1)'
                 });
                 
-                animation.onfinish = () => particle.remove();
+                animation.onfinish = () => confetti.remove();
             }
         }
-
-        // 页面加载完成后初始化游戏
-        document.addEventListener('DOMContentLoaded', initGame);
-
-        // 窗口大小变化时重新计算连接线
-        window.addEventListener('resize', () => {
-            setTimeout(createConnections, 100);
-        });
     </script>
 </body>
-
-</html>  
+</html>
